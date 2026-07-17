@@ -48,9 +48,9 @@ if submitted:
             
             # Using the new Google GenAI library
             response = client.models.generate_content(
-                model='gemini-1.5-flash',
-                contents=prompt
-            )
+    model='gemini-2.5-flash',
+    contents=prompt
+)
             
             raw_text = response.text.replace("```json", "").replace("```", "").strip()
             data = json.loads(raw_text)
