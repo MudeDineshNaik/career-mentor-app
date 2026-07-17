@@ -1,13 +1,12 @@
 import streamlit as st
-import google.generativeai as genai
-import os
+from google import genai
 import json
 import urllib.parse
-from dotenv import load_dotenv
+import os
 
 # 1. Setup
-load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Streamlit Cloud will read GEMINI_API_KEY from your Settings -> Secrets
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 st.set_page_config(page_title="AI Career Mentor", layout="wide")
 
@@ -15,31 +14,26 @@ st.title("🚀 Simple Career Roadmap")
 st.sidebar.title("How it works")
 st.sidebar.info("Fill in the form below. We will build a 30-day learning plan for you.")
 
-# 2. Professional Form with Simple Language & Examples
+# 2. Professional Form
 with st.form("profile_form"):
     st.subheader("📝 Tell us about you")
     
     col1, col2 = st.columns(2)
-    
     with col1:
-        major = st.text_input("What are you studying?", placeholder="Example: Computer Science, Mechanical, B.Com")
+        major = st.text_input("What are you studying?", placeholder="Example: Computer Science, Mechanical")
         personality = st.selectbox("What is your style?", ["Dominant (Leader)", "Steady (Team Player)", "Influential (Creative)", "Conscientious (Detail-oriented)"])
         
     with col2:
-        interest = st.text_input("What task do you enjoy?", placeholder="Example: Solving math problems, Drawing, Managing people")
+        interest = st.text_input("What task do you enjoy?", placeholder="Example: Solving math problems, Managing people")
         time_per_day = st.slider("Hours to study per day?", 1, 5, 2)
     
-    projects = st.text_area("What skills or projects have you done?", placeholder="Example: Built a simple calculator, know basic HTML, or no projects yet.")
-    
+    projects = st.text_area("What skills or projects have you done?", placeholder="Example: Built a calculator, know basic HTML.")
     submitted = st.form_submit_button("Create My Roadmap")
 
-# 3. Logic & Display
+# 3. Logic
 if submitted:
     with st.spinner("Building your custom plan..."):
         try:
-            # Using the requested model syntax
-            model = genai.GenerativeModel('gemini-3.5-flash')
-            
             prompt = f"""
             Analyze this student: 
             Major: {major}, Style: {personality}, Interests: {interest}, 
@@ -52,7 +46,12 @@ if submitted:
             3. 'roadmap' (a list of objects with 'topic', 'skills_covered', and 'youtube_search').
             """
             
-            response = model.generate_content(prompt)
+            # Using the new Google GenAI library
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt
+            )
+            
             raw_text = response.text.replace("```json", "").replace("```", "").strip()
             data = json.loads(raw_text)
 
@@ -73,4 +72,4 @@ if submitted:
                             st.markdown(f"[🔗 Click here to watch free lessons]({url})")
                             
         except Exception as e:
-            st.error("I'm sorry, I couldn't build your plan. Please check your internet or try again.")
+            st.error(f"Error: {e}")
